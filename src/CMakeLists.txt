@@ -191,6 +191,8 @@ target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
 find_package(spdlog REQUIRED)
 target_link_libraries(libultraship PUBLIC spdlog::spdlog)
 
+target_link_libraries(libultraship PRIVATE bgfx)
+
 find_package(Vulkan REQUIRED)
 target_link_libraries(libultraship PUBLIC Vulkan::Headers)
 target_link_libraries(libultraship PUBLIC Vulkan::Vulkan)
