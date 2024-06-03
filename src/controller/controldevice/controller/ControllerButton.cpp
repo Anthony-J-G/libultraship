@@ -205,7 +205,7 @@ bool ControllerButton::AddOrEditButtonMappingFromRawPress(CONTROLLERBUTTONS_T bi
     return true;
 }
 
-bool ControllerButton::ProcessKeyboardEvent(KbEventType eventType, KbScancode scancode) {
+bool ControllerButton::ProcessKeyboardEvent(Ship::KbEventType eventType, Ship::KbScancode scancode) {
     if (mUseKeydownEventToCreateNewMapping && eventType == LUS_KB_EVENT_KEY_DOWN) {
         mKeyboardScancodeForNewMapping = scancode;
         return true;
