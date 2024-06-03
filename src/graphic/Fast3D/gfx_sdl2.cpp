@@ -296,6 +296,8 @@ static LRESULT CALLBACK gfx_sdl_wnd_proc(HWND h_wnd, UINT message, WPARAM w_para
 };
 #endif
 
+// TODO: Fix this so it's nicer to work with when using Vulkan/make it less binary between OpenGL/Metal
+// NOTE: This TODO should be addressed after Vulkan is confirmed to at least work in running the backend
 static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool start_in_fullscreen, uint32_t width,
                          uint32_t height, int32_t posX, int32_t posY) {
     window_width = width;
@@ -345,7 +347,7 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
     if (use_opengl) {
-        flags = flags | SDL_WINDOW_OPENGL;
+        flags = flags | SDL_WINDOW_OPENGL | SDL_WINDOW_VULKAN;
     } else {
         flags = flags | SDL_WINDOW_METAL;
     }
