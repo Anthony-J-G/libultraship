@@ -225,6 +225,10 @@ if(USE_F3DEX2)
     target_compile_definitions(libultraship PRIVATE F3DEX_GBI_2)
 endif()
 
+if(Vulkan_FOUND) 
+    target_compile_definitions(libultraship PRIVATE ENABLE_VULKAN)
+endif()
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         WIN32
@@ -273,7 +277,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 else()
     target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
-        ENABLE_VULKAN
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>
