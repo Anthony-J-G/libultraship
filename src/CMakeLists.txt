@@ -191,6 +191,10 @@ target_link_libraries(libultraship PUBLIC tinyxml2::tinyxml2)
 find_package(spdlog REQUIRED)
 target_link_libraries(libultraship PUBLIC spdlog::spdlog)
 
+find_package(Vulkan REQUIRED)
+target_link_libraries(libultraship PUBLIC Vulkan::Headers)
+target_link_libraries(libultraship PUBLIC Vulkan::Vulkan)
+
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
@@ -269,6 +273,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 else()
     target_compile_definitions(libultraship PRIVATE
         ENABLE_OPENGL
+        ENABLE_VULKAN
         $<$<CONFIG:Debug>:_DEBUG>
         $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
         $<$<CONFIG:Debug>:SPDLOG_ACTIVE_LEVEL=0>

@@ -1,4 +1,5 @@
 include(FetchContent)
+include(FindVulkan)
 
 find_package(OpenGL QUIET)
 
