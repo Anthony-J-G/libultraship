@@ -226,7 +226,10 @@ if(USE_F3DEX2)
 endif()
 
 if(Vulkan_FOUND) 
-    target_compile_definitions(libultraship PRIVATE ENABLE_VULKAN)
+    target_compile_definitions(libultraship PRIVATE
+        ENABLE_VULKAN
+        VULKAN_PATH=\"${Vulkan_LIBRARY}\"
+    )
 endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")

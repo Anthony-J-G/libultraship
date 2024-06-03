@@ -56,6 +56,7 @@
 #include <algorithm> // Necessary for std::clamp
 #include <fstream>
 #include <filesystem>
+#include "Context.h"
 
 #include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
@@ -97,6 +98,7 @@ static std::vector<VkFence> g_InFlightFences;
 static uint32_t g_CurrentFrame = 0;
 static bool g_FramebufferResized = false;
 static bool g_WindowMinimizedResized = false;
+static SDL_Window* g_WindowReference;
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
@@ -114,14 +116,25 @@ struct SwapChainSupportDetails {
 };
 
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+void InitializeWindow(SDL_Window* wndref) {
+    g_WindowReference = wndref;
+}
+
+
+bool ValidateVulkan() {
+    // TODO
+    return true;
+}
+
+
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice gpu) {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
@@ -130,7 +143,7 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
         }
 
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, g_Surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(gpu, i, g_Surface, &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -194,12 +207,14 @@ VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, SDL_Window* window) {
+VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
         int width, height;
-        SDL_Vulkan_GetDrawableSize(window, &width, &height);
+        SDL_Vulkan_GetDrawableSize(
+            g_WindowReference, &width, &height
+        );
 
         VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
@@ -458,8 +473,8 @@ void gfx_vulkan_define_phys_device() {
     g_PrimaryPhysDevice = g_PhysDevices[0];
 }
 
-void gfx_vulkan_make_surface(SDL_Window* window) {
-    if (!SDL_Vulkan_CreateSurface(window, g_Instance, &g_Surface)) {
+void gfx_vulkan_make_surface() {
+    if (!SDL_Vulkan_CreateSurface(g_WindowReference, g_Instance, &g_Surface)) {
         std::cout << "SDL could not create Vulkan surface: %s\n", SDL_GetError();
         exit(1);
     }
@@ -501,12 +516,12 @@ void gfx_vulkan_make_logic_device() {
     vkGetDeviceQueue(g_LogicDevice, indices.presentFamily.value(), 0, &g_PresentQueue);
 }
 
-void gfx_vulkan_make_swapchain(SDL_Window* window) {
+void gfx_vulkan_make_swapchain() {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(g_PrimaryPhysDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities, window);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1; // Avoid waiting on the driver's internal ops
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
@@ -827,18 +842,17 @@ void InvalidateSwapChain() {
     vkDestroySwapchainKHR(g_LogicDevice, g_SwapChain, nullptr);
 }
 
-void RebuildSwapChain(SDL_Window* window) {
+void RebuildSwapChain() {
     int width = 0, height = 0;
-    SDL_Vulkan_GetDrawableSize(window, &width, &height);
-    while (width == 0 || height == 0) {
-        SDL_Vulkan_GetDrawableSize(window, &width, &height);
-        // ();
+    SDL_Vulkan_GetDrawableSize(g_WindowReference, &width, &height);
+    while (width == 0 || height == 0) { // Handle Minimized Window
+        SDL_Vulkan_GetDrawableSize(g_WindowReference, &width, &height);
     }
     vkDeviceWaitIdle(g_LogicDevice);
 
     InvalidateSwapChain();
 
-    gfx_vulkan_make_swapchain(window);
+    gfx_vulkan_make_swapchain();
     gfx_vulkan_make_img_views();
     gfx_vulkan_create_framebuffer();
 }
@@ -847,7 +861,7 @@ void AwaitIdle() {
     vkDeviceWaitIdle(g_LogicDevice);
 }
 
-void DrawFrame(SDL_Window* window) {
+void DrawFrame() {
 
     vkWaitForFences(g_LogicDevice, 1, &g_InFlightFences[g_CurrentFrame], VK_TRUE, UINT64_MAX);
 
@@ -855,7 +869,7 @@ void DrawFrame(SDL_Window* window) {
     VkResult result = vkAcquireNextImageKHR(g_LogicDevice, g_SwapChain, UINT64_MAX,
                                             g_ImageAvailableSemaphores[g_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        RebuildSwapChain(window);
+        RebuildSwapChain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("failed to acquire swap chain image!");
@@ -899,7 +913,7 @@ void DrawFrame(SDL_Window* window) {
 
     result = vkQueuePresentKHR(g_PresentQueue, &presentInfo);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RebuildSwapChain(window);
+        RebuildSwapChain();
     } else if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to present swap chain image!");
     }
@@ -929,10 +943,10 @@ void CreateImage() {
 
 static void gfx_vulkan_init(void) {
     gfx_vulkan_make_instance();
-    // gfx_vulkan_make_surface();
+    gfx_vulkan_make_surface();
     gfx_vulkan_define_phys_device();
     gfx_vulkan_make_logic_device();
-    // gfx_vulkan_make_swapchain();
+    gfx_vulkan_make_swapchain();
     gfx_vulkan_make_img_views();
     gfx_vulkan_make_render_pass();
     gfx_vulkan_make_gfxpipe();
