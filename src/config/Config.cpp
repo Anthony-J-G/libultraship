@@ -278,7 +278,7 @@ void Config::SetWindowBackend(WindowBackend backend) {
         case WindowBackend::FAST3D_SDL_METAL:
             SetString("Window.Backend.Name", "Metal");
             break;
-        case WindowBackend::FAST3D_SDL_VULKAN:
+        case WindowBackend::FAST3D_SDL_BGFX_AUTO:
             SetString("Window.Backend.Name", "Vulkan");
             break;
         default:

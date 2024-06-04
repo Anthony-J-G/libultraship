@@ -42,6 +42,13 @@
 
 #endif
 
+#ifdef ENABLE_VULKAN
+#include <imgui_impl_sdl2.h>
+#include <bgfx/bgfx.h>
+
+#endif
+
+
 #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
 #include <graphic/Fast3D/gfx_direct3d11.h>
 #include <imgui_impl_dx11.h>
@@ -194,6 +201,8 @@ void Gui::ImGuiBackendInit() {
 #endif
             break;
 #endif
+        case WindowBackend::FAST3D_SDL_BGFX_AUTO:      
+            break;
 
 #ifdef __APPLE__
         case WindowBackend::FAST3D_SDL_METAL:
@@ -436,6 +445,8 @@ void Gui::ImGuiBackendNewFrame() {
             ImGui_ImplOpenGL3_NewFrame();
             break;
 #endif
+        case WindowBackend::FAST3D_SDL_BGFX_AUTO:
+            break;
 
 #ifdef ENABLE_DX11
         case WindowBackend::FAST3D_DXGI_DX11:
