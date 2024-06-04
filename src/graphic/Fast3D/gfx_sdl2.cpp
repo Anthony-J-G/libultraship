@@ -21,19 +21,20 @@
 #include "gfx_metal.h"
 #else
 #include <SDL2/SDL.h>
+#include <SDL_syswm.h>
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL2/SDL_opengles2.h>
 #endif
 
 #include "window/gui/Gui.h"
 #include "public/bridge/consolevariablebridge.h"
+#include "graphic/Fast3D/gfx_bgfx.h"
 
 #include "gfx_window_manager_api.h"
 #include "gfx_screen_config.h"
 #ifdef _WIN32
 #include <WTypesbase.h>
 #include <Windows.h>
-#include <SDL_syswm.h>
 #endif
 
 #define GFX_BACKEND_NAME "SDL"
@@ -347,18 +348,22 @@ static void gfx_sdl_init(const char* game_name, const char* gfx_api_name, bool s
 #endif
 
     if (use_opengl) {
-        flags = flags | SDL_WINDOW_OPENGL | SDL_WINDOW_VULKAN;
+        flags = flags | SDL_WINDOW_OPENGL;
     } else {
         flags = flags | SDL_WINDOW_METAL;
     }
 
     wnd = SDL_CreateWindow(title, posX, posY, window_width, window_height, flags);
-#ifdef _WIN32
-    // Get Windows window handle and use it to subclass the window procedure.
-    // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     SDL_SysWMinfo wmInfo;
     SDL_VERSION(&wmInfo.version);
     SDL_GetWindowWMInfo(wnd, &wmInfo);
+
+    if (strcmp(gfx_api_name, "BGFX") == 0) {
+        InitializeBgfxWindowInfo(wmInfo, wnd);
+    }
+#ifdef _WIN32
+    // Get Windows window handle and use it to subclass the window procedure.
+    // Needed to circumvent SDLs DPI scaling problems under windows (original does only scale *sometimes*).
     HWND hwnd = wmInfo.info.win.window;
     SDL_WndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)gfx_sdl_wnd_proc);
 #endif

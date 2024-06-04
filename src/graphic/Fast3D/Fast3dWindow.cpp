@@ -9,7 +9,7 @@
 #include "graphic/Fast3D/gfx_metal.h"
 #include "graphic/Fast3D/gfx_direct3d11.h"
 #include "graphic/Fast3D/gfx_direct3d12.h"
-#include "graphic/Fast3D/gfx_vulkan.h"
+#include "graphic/Fast3D/gfx_bgfx.h"
 #include "graphic/Fast3D/gfx_pc.h"
 
 #include <fstream>
@@ -26,7 +26,7 @@ Fast3dWindow::Fast3dWindow(std::vector<std::shared_ptr<Ship::GuiWindow>> guiWind
     AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_DXGI_DX11);
 #endif
 #ifdef ENABLE_VULKAN
-    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_VULKAN);
+    AddAvailableWindowBackend(Ship::WindowBackend::FAST3D_SDL_BGFX_AUTO);
 #endif
 #ifdef __APPLE__
     if (Metal_IsSupported()) {
@@ -121,8 +121,8 @@ void Fast3dWindow::InitWindowManager() {
             break;
 #endif
 #ifdef ENABLE_VULKAN
-        case Ship::WindowBackend::FAST3D_SDL_VULKAN:
-            mRenderingApi = &gfx_vulkan_api;
+        case Ship::WindowBackend::FAST3D_SDL_BGFX_AUTO:
+            mRenderingApi = &gfx_bgfx_api;
             mWindowManagerApi = &gfx_sdl;
             break;
 #endif

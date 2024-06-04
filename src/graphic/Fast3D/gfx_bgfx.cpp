@@ -20,9 +20,49 @@
 #include "gfx_pc.h"
 #include <public/bridge/consolevariablebridge.h>
 #include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_video.h>
+#include <SDL_syswm.h>
+
+SDL_Window* g_WindowRef;
+SDL_SysWMinfo g_SysWindowInfo;
+
+
+void InitializeBgfxWindowInfo(SDL_SysWMinfo windowinfo, SDL_Window* windowref) {
+    g_WindowRef = windowref;
+    g_SysWindowInfo = windowinfo;
+}
+
 
 static void gfx_bgfx_init(void) {
-    bgfx::init();
+    bgfx::Init params;
+    params.type = bgfx::RendererType::Vulkan;
+    params.resolution.width = 800;
+    params.resolution.height = 600;
+    params.resolution.reset = BGFX_RESET_VSYNC;
+    params.platformData.nwh = (void*)(uintptr_t)g_SysWindowInfo.info.win.window;
+
+    // Render an empty frame
+    bgfx::renderFrame();
+
+    bool result = bgfx::init(params);
+    if (!result) {
+        SPDLOG_CRITICAL("Bgfx Initialization failure!");
+    }
+
+      // Enable debug text.
+    bgfx::setDebug(BGFX_DEBUG_TEXT /*| BGFX_DEBUG_STATS*/);
+
+    // Set view rectangle for 0th view
+    bgfx::setViewRect(0, 0, 0, uint16_t(800), uint16_t(600));
+
+    // Clear the view rect
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
+
+    // Set empty primitive on screen
+    bgfx::touch(0);
 }
 
 static int gfx_bgfx_get_max_texture_size() {
@@ -115,7 +155,7 @@ static void gfx_bgfx_on_resize(void) {
 }
 
 static void gfx_bgfx_start_frame(void) {
-
+    bgfx::frame();
 }
 
 static void gfx_bgfx_end_frame(void) {
